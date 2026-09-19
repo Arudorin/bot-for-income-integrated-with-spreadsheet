@@ -1,0 +1,376 @@
+{
+  "transactions": [
+    {
+      "id": "TRX-20260919-012",
+      "timestamp": "2026-09-19T10:24:09.945Z",
+      "date": "2026-09-19",
+      "time": "10.24",
+      "platform": "telegram",
+      "sender": "@kasir_toyisland",
+      "customerName": "Pelanggan Umum",
+      "rawMessage": "honda odysey laku 50k",
+      "items": [
+        {
+          "id": "item-1789813449945-0",
+          "name": "Honda Odyssey",
+          "qty": 1,
+          "unitPrice": 50000,
+          "subtotal": 50000,
+          "category": "Mainan"
+        }
+      ],
+      "subtotal": 50000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 50000,
+      "paymentMethod": "Tunai",
+      "paymentStatus": "Lunas",
+      "notes": "",
+      "syncedToGoogleSheets": false
+    },
+    {
+      "id": "TRX-20260919-011",
+      "timestamp": "2026-09-19T09:55:52.041Z",
+      "date": "2026-09-19",
+      "time": "09.55",
+      "platform": "whatsapp",
+      "sender": "+62 812-3456-7890 (Admin Toko)",
+      "customerName": "Pelanggan Umum",
+      "rawMessage": "subaru wrx laku 100k",
+      "items": [
+        {
+          "id": "item-1789811752048-0",
+          "name": "Subaru WRX",
+          "qty": 1,
+          "unitPrice": 100000,
+          "subtotal": 100000,
+          "category": "Mainan / Hobi"
+        }
+      ],
+      "subtotal": 100000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 100000,
+      "paymentMethod": "Tunai",
+      "paymentStatus": "Lunas",
+      "notes": "",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260919-010",
+      "timestamp": "2026-09-19T09:51:22.248Z",
+      "date": "2026-09-19",
+      "time": "09.51",
+      "platform": "whatsapp",
+      "sender": "+62899887766",
+      "customerName": "Dimas",
+      "rawMessage": "2 Es Kopi Susu @18k, 1 Roti Bakar Coklat 20rb bayar QRIS a.n Dimas",
+      "items": [
+        {
+          "id": "item-1789811482255-0",
+          "name": "Es Kopi Susu",
+          "qty": 2,
+          "unitPrice": 18000,
+          "subtotal": 36000,
+          "category": "Minuman"
+        },
+        {
+          "id": "item-1789811482255-1",
+          "name": "Roti Bakar Coklat",
+          "qty": 1,
+          "unitPrice": 20000,
+          "subtotal": 20000,
+          "category": "Makanan"
+        }
+      ],
+      "subtotal": 56000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 56000,
+      "paymentMethod": "QRIS",
+      "paymentStatus": "Lunas",
+      "notes": "",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260919-009",
+      "timestamp": "2026-09-19T09:48:51.638Z",
+      "date": "2026-09-19",
+      "time": "09.48",
+      "platform": "whatsapp",
+      "sender": "+62 812-3456-7890 (Admin Toko)",
+      "customerName": "Sarah",
+      "rawMessage": "Pagi min, catat ya: 2 Kopi Susu Aren @18k, 1 Roti Bakar Coklat 15rb bayar via QRIS atas nama Sarah",
+      "items": [
+        {
+          "id": "item-1789811331639-0",
+          "name": "Pagi",
+          "qty": 1,
+          "unitPrice": 2000,
+          "subtotal": 2000,
+          "category": "Umum"
+        }
+      ],
+      "subtotal": 2000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 2000,
+      "paymentMethod": "QRIS",
+      "paymentStatus": "Lunas",
+      "notes": "Diproses otomatis",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260919-008",
+      "timestamp": "2026-09-19T09:47:01.514Z",
+      "date": "2026-09-19",
+      "time": "09.47",
+      "platform": "telegram",
+      "sender": "@hendra_cloth",
+      "customerName": "Hendra",
+      "rawMessage": "3 Kaos Polos Hitam XL @75rb, trf Mandiri a.n Hendra",
+      "items": [
+        {
+          "id": "item-1789811221514-0",
+          "name": "Kaos Polos Hitam XL",
+          "qty": 3,
+          "unitPrice": 75000,
+          "subtotal": 225000,
+          "category": "Pakaian"
+        }
+      ],
+      "subtotal": 225000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 225000,
+      "paymentMethod": "Transfer Mandiri",
+      "paymentStatus": "Lunas",
+      "notes": "a.n Hendra",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260919-007",
+      "timestamp": "2026-09-19T09:46:34.335Z",
+      "date": "2026-09-19",
+      "time": "09.46",
+      "platform": "whatsapp",
+      "sender": "+628123456789",
+      "customerName": "Budi",
+      "rawMessage": "2 Kopi Susu Gula Aren @18k, 1 Croissant Coklat 25rb bayar via QRIS an Budi",
+      "items": [
+        {
+          "id": "item-1789811194340-0",
+          "name": "Kopi Susu Gula Aren ,  Croissant Coklat",
+          "qty": 1,
+          "unitPrice": 2000,
+          "subtotal": 2000,
+          "category": "Umum"
+        }
+      ],
+      "subtotal": 2000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 2000,
+      "paymentMethod": "QRIS",
+      "paymentStatus": "Lunas",
+      "notes": "Diproses otomatis",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260919-006",
+      "timestamp": "2026-09-19T09:45:34.022Z",
+      "date": "2026-09-19",
+      "time": "09.45",
+      "platform": "whatsapp",
+      "sender": "+6281399887766",
+      "customerName": "Pelanggan Umum",
+      "rawMessage": "Catat min: 2 Nasi Bakar Cumi @22k, 2 Es Jeruk @5.000 bayar QRIS a.n Dimas",
+      "items": [
+        {
+          "id": "item-1789811134029-0",
+          "name": "Catat min:  Nasi Bakar Cumi @,  Es",
+          "qty": 1,
+          "unitPrice": 22000,
+          "subtotal": 22000,
+          "category": "Umum"
+        }
+      ],
+      "subtotal": 22000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 22000,
+      "paymentMethod": "QRIS",
+      "paymentStatus": "Lunas",
+      "notes": "Diproses otomatis",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260919-001",
+      "timestamp": "2026-09-19T08:15:00.000Z",
+      "date": "2026-09-19",
+      "time": "08:15",
+      "platform": "whatsapp",
+      "sender": "+6281288991122",
+      "customerName": "Kak Sarah",
+      "rawMessage": "Pagi kak, pesan Kopi Susu Aren 2 @18.000 sama Roti Bakar Coklat 1 15rb ya. Bayar via QRIS",
+      "items": [
+        {
+          "id": "item-1",
+          "name": "Kopi Susu Aren",
+          "qty": 2,
+          "unitPrice": 18000,
+          "subtotal": 36000,
+          "category": "Minuman"
+        },
+        {
+          "id": "item-2",
+          "name": "Roti Bakar Coklat",
+          "qty": 1,
+          "unitPrice": 15000,
+          "subtotal": 15000,
+          "category": "Makanan"
+        }
+      ],
+      "subtotal": 51000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 51000,
+      "paymentMethod": "QRIS",
+      "paymentStatus": "Lunas",
+      "notes": "Meja 03 - Pesanan pagi",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260919-002",
+      "timestamp": "2026-09-19T09:40:00.000Z",
+      "date": "2026-09-19",
+      "time": "09:40",
+      "platform": "telegram",
+      "sender": "@rendy_pratama",
+      "customerName": "Mas Rendy",
+      "rawMessage": "Laku Kaos Polos Hitam Cotton 24s size L 3 pcs @65k. Transfer BCA atas nama Rendy",
+      "items": [
+        {
+          "id": "item-3",
+          "name": "Kaos Polos Hitam Cotton 24s (L)",
+          "qty": 3,
+          "unitPrice": 65000,
+          "subtotal": 195000,
+          "category": "Pakaian"
+        }
+      ],
+      "subtotal": 195000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 195000,
+      "paymentMethod": "Transfer BCA",
+      "paymentStatus": "Lunas",
+      "notes": "Kirim via J&T Express",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260919-003",
+      "timestamp": "2026-09-19T10:12:00.000Z",
+      "date": "2026-09-19",
+      "time": "10:12",
+      "platform": "whatsapp",
+      "sender": "+6285711223344",
+      "customerName": "Ibu Dewi",
+      "rawMessage": "Catat ya min: Nasi Ayam Geprek Sambal Matah 4 porsi @25.000, Es Teh Manis 4 @4.000, bayar tunai pas",
+      "items": [
+        {
+          "id": "item-4",
+          "name": "Nasi Ayam Geprek Sambal Matah",
+          "qty": 4,
+          "unitPrice": 25000,
+          "subtotal": 100000,
+          "category": "Makanan"
+        },
+        {
+          "id": "item-5",
+          "name": "Es Teh Manis",
+          "qty": 4,
+          "unitPrice": 4000,
+          "subtotal": 16000,
+          "category": "Minuman"
+        }
+      ],
+      "subtotal": 116000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 116000,
+      "paymentMethod": "Tunai",
+      "paymentStatus": "Lunas",
+      "notes": "Takeaway kantor lantai 3",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260918-004",
+      "timestamp": "2026-09-18T14:20:00.000Z",
+      "date": "2026-09-18",
+      "time": "14:20",
+      "platform": "telegram",
+      "sender": "@dewi_boutique",
+      "customerName": "Dewi",
+      "rawMessage": "Laku Gamis Silk Motif Flora 1 pcs 220.000 diskon 20rb, bayar Transfer Mandiri",
+      "items": [
+        {
+          "id": "item-6",
+          "name": "Gamis Silk Motif Flora",
+          "qty": 1,
+          "unitPrice": 220000,
+          "subtotal": 220000,
+          "category": "Fashion"
+        }
+      ],
+      "subtotal": 220000,
+      "discount": 20000,
+      "tax": 0,
+      "totalAmount": 200000,
+      "paymentMethod": "Transfer Mandiri",
+      "paymentStatus": "Lunas",
+      "notes": "Promo flash sale akhir pekan",
+      "syncedToGoogleSheets": true
+    },
+    {
+      "id": "TRX-20260918-005",
+      "timestamp": "2026-09-18T16:45:00.000Z",
+      "date": "2026-09-18",
+      "time": "16:45",
+      "platform": "whatsapp",
+      "sender": "+6281900887766",
+      "customerName": "Pak Hendra",
+      "rawMessage": "Catat Mas: Paket Kopi Arabika Gayo 250gr 2 bks @75.000, bayar GoPay",
+      "items": [
+        {
+          "id": "item-7",
+          "name": "Kopi Arabika Gayo 250gr",
+          "qty": 2,
+          "unitPrice": 75000,
+          "subtotal": 150000,
+          "category": "Kopi"
+        }
+      ],
+      "subtotal": 150000,
+      "discount": 0,
+      "tax": 0,
+      "totalAmount": 150000,
+      "paymentMethod": "GoPay",
+      "paymentStatus": "Lunas",
+      "notes": "Beans roasted medium-dark",
+      "syncedToGoogleSheets": true
+    }
+  ],
+  "settings": {
+    "businessName": "Toy Island",
+    "currency": "IDR",
+    "telegramBotToken": "8788819860:AAG2iQ6n8goPnNrpdH3UPIzqkLg_6_iDg88",
+    "telegramBotUsername": "toyisland_bot",
+    "telegramWebhookActive": true,
+    "whatsappVerifyToken": "toyisland_wa_verify_2026",
+    "whatsappAccessToken": "",
+    "whatsappPhoneNumberId": "",
+    "googleAppsScriptUrl": "https://script.google.com/macros/s/AKfycbyBz5x8zUKjqgGrGqhj9whwEgLCooRCwSOUHShT82hui5NJTO7l_XhCSOrIMBbZkmIx4g/exec",
+    "googleSheetsAutoSync": false
+  }
+}

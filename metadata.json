@@ -1,0 +1,6 @@
+{
+  "name": "Bot Catat Penjualan WA & Telegram",
+  "description": "Bot pencatat transaksi penjualan dari WhatsApp & Telegram otomatis masuk ke spreadsheet secara realtime menggunakan AI Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
