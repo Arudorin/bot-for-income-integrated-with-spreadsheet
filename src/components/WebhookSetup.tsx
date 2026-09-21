@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BotSettings } from '../types';
+import { BotSettings, AuthUser } from '../types';
 import {
   Send,
   MessageCircle,
@@ -13,7 +13,15 @@ import {
   RefreshCw,
   Save,
   Zap,
+  Activity,
+  Terminal,
+  ShieldAlert,
+  Globe,
+  CloudUpload,
+  Lock,
 } from 'lucide-react';
+import { WhatsAppDiagnostic } from './WhatsAppDiagnostic';
+import { GOOGLE_APPS_SCRIPT_CODE } from '../googleAppsScriptTemplate';
 
 interface WebhookSetupProps {
   settings: BotSettings | null;
@@ -21,6 +29,7 @@ interface WebhookSetupProps {
   onTestTelegram: (token: string) => Promise<{ success: boolean; bot?: any; error?: string }>;
   onSetTelegramWebhook: (token: string) => Promise<{ success: boolean; message?: string; error?: string }>;
   onTestGoogleSheetsSync: () => Promise<{ success: boolean; message: string }>;
+  currentUser?: AuthUser | null;
 }
 
 export const WebhookSetup: React.FC<WebhookSetupProps> = ({
@@ -29,10 +38,15 @@ export const WebhookSetup: React.FC<WebhookSetupProps> = ({
   onTestTelegram,
   onSetTelegramWebhook,
   onTestGoogleSheetsSync,
+  currentUser,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'telegram' | 'whatsapp' | 'sheets'>('telegram');
+  const [waViewMode, setWaViewMode] = useState<'settings' | 'diagnostic'>('settings');
 
   // Local state form
+  const [webhookDomain, setWebhookDomain] = useState(
+    settings?.customWebhookDomain || 'https://toyisland-income.ai.studio'
+  );
   const [telegramToken, setTelegramToken] = useState(settings?.telegramBotToken || '');
   const [waVerifyToken, setWaVerifyToken] = useState(settings?.whatsappVerifyToken || 'toyisland_wa_verify_2026');
   const [waAccessToken, setWaAccessToken] = useState(settings?.whatsappAccessToken || '');
@@ -57,6 +71,15 @@ export const WebhookSetup: React.FC<WebhookSetupProps> = ({
     lastActivityTime: string | null;
   } | null>(null);
 
+  const [waStatus, setWaStatus] = useState<{
+    configured: boolean;
+    valid?: boolean;
+    phoneNumber?: string;
+    verifiedName?: string;
+    error?: string;
+  } | null>(null);
+  const [testWaNumber, setTestWaNumber] = useState('6289622640080');
+
   const fetchTgStatus = async () => {
     try {
       const res = await fetch('/api/telegram/status');
@@ -69,15 +92,32 @@ export const WebhookSetup: React.FC<WebhookSetupProps> = ({
     }
   };
 
+  const fetchWaStatus = async () => {
+    try {
+      const res = await fetch('/api/whatsapp/status');
+      if (res.ok) {
+        const data = await res.json();
+        setWaStatus(data);
+      }
+    } catch (e) {
+      // ignore
+    }
+  };
+
   useEffect(() => {
     fetchTgStatus();
-    const interval = setInterval(fetchTgStatus, 6000);
+    fetchWaStatus();
+    const interval = setInterval(() => {
+      fetchTgStatus();
+      fetchWaStatus();
+    }, 6000);
     return () => clearInterval(interval);
   }, []);
 
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://your-app.run.app';
-  const telegramWebhookUrl = `${currentOrigin}/api/webhook/telegram`;
-  const whatsappWebhookUrl = `${currentOrigin}/api/webhook/whatsapp`;
+  const browserOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://toyisland-income.ai.studio';
+  const effectiveDomain = webhookDomain.trim().replace(/\/+$/, '') || 'https://toyisland-income.ai.studio';
+  const telegramWebhookUrl = `${effectiveDomain}/api/webhook/telegram`;
+  const whatsappWebhookUrl = `${effectiveDomain}/api/webhook/whatsapp`;
 
   const copyToClipboard = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
@@ -95,8 +135,62 @@ export const WebhookSetup: React.FC<WebhookSetupProps> = ({
       whatsappPhoneNumberId: waPhoneId,
       googleAppsScriptUrl: sheetsUrl,
       googleSheetsAutoSync: autoSyncSheets,
+      customWebhookDomain: effectiveDomain,
     });
     setIsSaving(false);
+  };
+
+  const handleSaveWhatsApp = async () => {
+    setIsSaving(true);
+    setTestResult({ status: 'loading', message: 'Menyimpan konfigurasi WhatsApp...' });
+    await onSaveSettings({
+      businessName,
+      telegramBotToken: telegramToken,
+      whatsappVerifyToken: waVerifyToken,
+      whatsappAccessToken: waAccessToken,
+      whatsappPhoneNumberId: waPhoneId,
+      googleAppsScriptUrl: sheetsUrl,
+      googleSheetsAutoSync: autoSyncSheets,
+      customWebhookDomain: effectiveDomain,
+    });
+    setIsSaving(false);
+    await fetchWaStatus();
+    setTestResult({
+      status: 'success',
+      message: '✅ Pengaturan WhatsApp berhasil disimpan ke sistem kasir!',
+    });
+  };
+
+  const handleTestWhatsAppMessage = async () => {
+    if (!waPhoneId.trim() || !waAccessToken.trim()) {
+      setTestResult({
+        status: 'error',
+        message: 'Phone Number ID dan Access Token wajib diisi lalu klik "Simpan Pengaturan WhatsApp".',
+      });
+      return;
+    }
+    setTestResult({ status: 'loading', message: `Mengirim pesan uji coba ke ${testWaNumber}...` });
+    try {
+      const res = await fetch('/api/whatsapp/test-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: testWaNumber }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setTestResult({
+          status: 'success',
+          message: `🎉 Pesan tes BERHASIL dikirim ke WhatsApp ${testWaNumber}! Cek WhatsApp Anda.`,
+        });
+      } else {
+        setTestResult({
+          status: 'error',
+          message: `Gagal kirim pesan: ${data.error || 'Periksa kembali Token atau Phone Number ID Anda di Meta.'}`,
+        });
+      }
+    } catch (e: any) {
+      setTestResult({ status: 'error', message: e.message || 'Gagal menghubungi server' });
+    }
   };
 
   const handleTestTelegramConnection = async () => {
@@ -151,84 +245,42 @@ export const WebhookSetup: React.FC<WebhookSetupProps> = ({
     }
   };
 
-  const googleAppsScriptCode = `// KODE GOOGLE APPS SCRIPT
-// Tempel kode ini di Spreadsheet Anda: Ekstensi > Apps Script
-function doPost(e) {
-  try {
-    var data = JSON.parse(e.postData.contents);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getActiveSheet();
-    
-    // Buat header jika sheet masih kosong
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow([
-        "ID Transaksi",
-        "Tanggal",
-        "Waktu",
-        "Kanal",
-        "Nama Pelanggan",
-        "Daftar Item",
-        "Total Qty",
-        "Subtotal",
-        "Diskon",
-        "Total Akhir (Rp)",
-        "Metode Bayar",
-        "Status",
-        "Catatan"
-      ]);
-      // Format header tebal & background hijau
-      sheet.getRange(1, 1, 1, 13).setFontWeight("bold").setBackground("#d1e7dd");
-    }
-    
-    // Tambah baris transaksi baru dari Bot
-    sheet.appendRow([
-      data.id,
-      data.date,
-      data.time,
-      data.platform ? data.platform.toUpperCase() : "WA/TG",
-      data.customerName || "-",
-      data.itemsText || "-",
-      data.totalQty || 1,
-      data.subtotal || 0,
-      data.discount || 0,
-      data.totalAmount || 0,
-      data.paymentMethod || "Tunai",
-      data.paymentStatus || "Lunas",
-      data.notes || ""
-    ]);
-    
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "success",
-      message: "Data berhasil dicatat ke Google Sheets"
-    })).setMimeType(ContentService.MimeType.JSON);
-    
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "error",
-      message: err.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
-  }
-}`;
+  const googleAppsScriptCode = GOOGLE_APPS_SCRIPT_CODE;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {/* Cashier Read-only Advisory Banner */}
+      {currentUser?.role === 'cashier' && (
+        <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex items-start space-x-3 text-amber-900 shadow-2xs">
+          <div className="w-8 h-8 rounded-xl bg-amber-200/60 flex items-center justify-center shrink-0 mt-0.5">
+            <Lock className="w-4 h-4 text-amber-800" />
+          </div>
+          <div className="text-xs">
+            <p className="font-bold text-amber-900">Mode Akses Kasir (Toko)</p>
+            <p className="text-amber-800/90 mt-0.5 leading-relaxed">
+              Anda sedang melihat halaman konfigurasi bot sebagai Kasir. Token bot, kredensial WhatsApp, dan webhook dilindungi oleh sistem. Masuk sebagai <strong>Owner / Administrator</strong> jika ingin mengubah atau menyimpan pengaturan bot.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Sub tabs */}
       <div className="bg-white rounded-2xl border border-slate-200 p-2 flex items-center justify-between flex-wrap gap-2 shadow-xs">
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar py-0.5 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => {
               setActiveSubTab('telegram');
               setTestResult({ status: 'idle', message: '' });
             }}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 min-h-[36px] ${
               activeSubTab === 'telegram'
                 ? 'bg-blue-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
-            <Send className="w-4 h-4" />
-            <span>1. Telegram Bot (Paling Mudah)</span>
+            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Telegram Bot</span>
           </button>
 
           <button
@@ -237,14 +289,14 @@ function doPost(e) {
               setActiveSubTab('whatsapp');
               setTestResult({ status: 'idle', message: '' });
             }}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 min-h-[36px] ${
               activeSubTab === 'whatsapp'
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
-            <MessageCircle className="w-4 h-4" />
-            <span>2. WhatsApp Bot</span>
+            <MessageCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>WhatsApp Bot</span>
           </button>
 
           <button
@@ -253,26 +305,28 @@ function doPost(e) {
               setActiveSubTab('sheets');
               setTestResult({ status: 'idle', message: '' });
             }}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 min-h-[36px] ${
               activeSubTab === 'sheets'
                 ? 'bg-emerald-800 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>3. Google Sheets Sync</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>Google Sheets Sync</span>
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={handleSaveAll}
-          disabled={isSaving}
-          className="inline-flex items-center space-x-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
-        >
-          <Save className="w-3.5 h-3.5" />
-          <span>{isSaving ? 'Menyimpan...' : 'Simpan Semua'}</span>
-        </button>
+        <div className="w-full sm:w-auto flex justify-end">
+          <button
+            type="button"
+            onClick={handleSaveAll}
+            disabled={isSaving}
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition-all shadow-xs min-h-[36px]"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>{isSaving ? 'Menyimpan...' : 'Simpan Semua'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Test feedback banner */}
@@ -449,101 +503,342 @@ function doPost(e) {
       {/* --- TAB 2: WHATSAPP BOT SETUP --- */}
       {activeSubTab === 'whatsapp' && (
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
-            <div>
-              <div className="flex items-center space-x-2">
-                <MessageCircle className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-bold text-slate-900">Setup Webhook WhatsApp</h3>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Koneksikan Meta WhatsApp Cloud API atau Gateway WhatsApp pilihan Anda ke webhook aplikasi ini:
-              </p>
+          {/* Sub-navigation Pills */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl text-xs">
+              <button
+                type="button"
+                onClick={() => setWaViewMode('settings')}
+                className={`px-3.5 py-2 rounded-lg font-bold transition-all flex items-center space-x-2 ${
+                  waViewMode === 'settings'
+                    ? 'bg-white text-slate-950 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Zap className="w-4 h-4 text-emerald-600" />
+                <span>Pengaturan & Kredensial Meta</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setWaViewMode('diagnostic')}
+                className={`px-3.5 py-2 rounded-lg font-bold transition-all flex items-center space-x-2 ${
+                  waViewMode === 'diagnostic'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Activity className="w-4 h-4 text-emerald-400 animate-pulse" />
+                <span>Pusat Diagnostik & Live Log Webhook</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </button>
             </div>
 
-            {/* Webhook Parameters for Meta */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Callback URL (Webhook URL):
-                </label>
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800">
-                  <span className="truncate mr-2">{whatsappWebhookUrl}</span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(whatsappWebhookUrl, 'wa-webhook')}
-                    className="inline-flex items-center px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs"
-                  >
-                    {copiedKey === 'wa-webhook' ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                    <span className="ml-1 text-[11px]">Salin</span>
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Masukkan URL ini ke dashboard Meta Developers &gt; WhatsApp &gt; Configuration &gt; Callback URL.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Verify Token (Token Verifikasi):
-                </label>
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800">
-                  <input
-                    type="text"
-                    value={waVerifyToken}
-                    onChange={(e) => setWaVerifyToken(e.target.value)}
-                    className="bg-transparent border-none outline-none flex-1 font-mono text-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(waVerifyToken, 'wa-verify')}
-                    className="inline-flex items-center px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs ml-2"
-                  >
-                    {copiedKey === 'wa-verify' ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                    <span className="ml-1 text-[11px]">Salin</span>
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Masukkan nilai yang sama di kolom Verify Token di dashboard Meta Developers.
-                </p>
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Phone Number ID (Opsional untuk balas pesan):
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: 104829182749182"
-                    value={waPhoneId}
-                    onChange={(e) => setWaPhoneId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    System User Permanent Access Token:
-                  </label>
-                  <input
-                    type="password"
-                    placeholder="Contoh: EAAG... (Access Token)"
-                    value={waAccessToken}
-                    onChange={(e) => setWaAccessToken(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 rounded-xl px-3.5 py-2 text-xs font-mono text-slate-900 outline-none"
-                  />
-                </div>
-              </div>
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={fetchWaStatus}
+                className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg flex items-center space-x-1.5 transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Cek Koneksi</span>
+              </button>
             </div>
           </div>
+
+          {/* Conditional View: DIAGNOSTIC CENTER */}
+          {waViewMode === 'diagnostic' ? (
+            <WhatsAppDiagnostic
+              serverUrl={effectiveDomain}
+              verifyToken={waVerifyToken}
+              waPhoneId={waPhoneId}
+              waAccessToken={waAccessToken}
+              onRefreshStatus={fetchWaStatus}
+            />
+          ) : (
+            /* Standard Settings View */
+            <div className="space-y-6">
+              {/* WhatsApp Status Banner */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      waStatus?.valid
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : waStatus?.configured
+                        ? 'bg-amber-50 text-amber-600'
+                        : 'bg-slate-100 text-slate-400'
+                    }`}
+                  >
+                    <MessageCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-bold text-slate-900 text-sm">Status WhatsApp Cloud API</h3>
+                      {waStatus?.valid ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span>
+                          Terhubung ({waStatus.phoneNumber || 'Aktif'})
+                        </span>
+                      ) : waStatus?.configured ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                          Token / Phone ID Belum Valid
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                          Belum Dikonfigurasi
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {waStatus?.valid
+                        ? `Bot siap membalas pesan dan mencatat transaksi dari nomor ${waStatus.phoneNumber || ''}.`
+                        : waStatus?.error
+                        ? `Perhatian Meta: ${waStatus.error}`
+                        : 'Masukkan Phone Number ID dan Access Token Meta di bawah lalu klik Simpan.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setWaViewMode('diagnostic')}
+                    className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all flex items-center space-x-1.5"
+                  >
+                    <Activity className="w-4 h-4 text-emerald-600" />
+                    <span>Buka Diagnostik</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveWhatsApp}
+                    disabled={isSaving}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center space-x-1.5"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{isSaving ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Target Domain Selector */}
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4.5 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center space-x-2">
+                    <Globe className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span className="text-xs font-bold text-emerald-950">
+                      Target Domain Webhook Aktif
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-200/80 text-emerald-900">
+                      Produksi
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-emerald-800 leading-relaxed">
+                  Meta Developers terhubung ke domain publik Anda. Webhook URL di bawah otomatis diatur ke <strong>{effectiveDomain}</strong>:
+                </p>
+
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setWebhookDomain('https://toyisland-income.ai.studio')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                      effectiveDomain === 'https://toyisland-income.ai.studio'
+                        ? 'bg-emerald-700 text-white shadow-xs'
+                        : 'bg-white text-slate-700 border border-emerald-200 hover:bg-emerald-100'
+                    }`}
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Domain Publik (toyisland-income.ai.studio)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setWebhookDomain(browserOrigin)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+                      effectiveDomain === browserOrigin && effectiveDomain !== 'https://toyisland-income.ai.studio'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>URL Preview Dev Saat Ini</span>
+                  </button>
+                </div>
+
+                <div className="flex items-start space-x-2 text-[11px] text-emerald-900/80 bg-white/70 p-2.5 rounded-xl border border-emerald-200/60">
+                  <CloudUpload className="w-3.5 h-3.5 text-emerald-700 shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Tips Deploy:</strong> Untuk menerapkan kode bot & diagnostik terbaru ke <code>toyisland-income.ai.studio</code>, klik menu <strong>Deploy</strong> atau <strong>Share</strong> di bagian atas Google AI Studio.
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <MessageCircle className="w-5 h-5 text-emerald-600" />
+                    <h3 className="text-base font-bold text-slate-900">1. Konfigurasi Webhook Meta</h3>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Salin Callback URL dan Verify Token di bawah ini ke menu <strong>Webhooks</strong> di Meta Developers:
+                  </p>
+                </div>
+
+                {/* Webhook Parameters for Meta */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Callback URL (Webhook URL):
+                    </label>
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800">
+                      <span className="truncate mr-2">{whatsappWebhookUrl}</span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(whatsappWebhookUrl, 'wa-webhook')}
+                        className="inline-flex items-center px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs"
+                      >
+                        {copiedKey === 'wa-webhook' ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                        <span className="ml-1 text-[11px]">Salin</span>
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Masukkan ke Meta Developers &gt; Webhooks &gt; Edit &gt; Callback URL.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Verify Token (Token Verifikasi):
+                    </label>
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs text-slate-800">
+                      <input
+                        type="text"
+                        value={waVerifyToken}
+                        onChange={(e) => setWaVerifyToken(e.target.value)}
+                        className="bg-transparent border-none outline-none flex-1 font-mono text-xs font-bold text-emerald-700"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(waVerifyToken, 'wa-verify')}
+                        className="inline-flex items-center px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs ml-2"
+                      >
+                        {copiedKey === 'wa-verify' ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                        <span className="ml-1 text-[11px]">Salin</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <Zap className="w-5 h-5 text-emerald-600" />
+                    <h3 className="text-base font-bold text-slate-900">2. Kredensial Pengiriman Pesan Meta</h3>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Kredensial ini diperlukan agar bot kasir memiliki izin membalas chat struk nota ke pembeli:
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Phone Number ID:
+                      </label>
+                      <input
+                        id="input-wa-phone-id"
+                        type="text"
+                        placeholder="Contoh: 1257688297437486"
+                        value={waPhoneId}
+                        onChange={(e) => setWaPhoneId(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-900 outline-none"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Dapat dilihat di menu Meta <strong>WhatsApp &gt; Nomor Telepon</strong> atau di samping nomor Anda.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        WhatsApp Access Token:
+                      </label>
+                      <input
+                        id="input-wa-token"
+                        type="password"
+                        placeholder="Tempel EAAV... di sini"
+                        value={waAccessToken}
+                        onChange={(e) => setWaAccessToken(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-900 outline-none"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Token yang disalin dari tombol salin di Meta Developer.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={handleSaveWhatsApp}
+                      disabled={isSaving}
+                      className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center space-x-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{isSaving ? 'Menyimpan...' : 'Simpan Pengaturan WhatsApp'}</span>
+                    </button>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        value={testWaNumber}
+                        onChange={(e) => setTestWaNumber(e.target.value)}
+                        placeholder="6281234567890"
+                        className="w-44 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleTestWhatsAppMessage}
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors"
+                      >
+                        Tes Kirim Pesan
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Prompt to Diagnostic */}
+              <div className="bg-slate-900 text-white p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <Activity className="w-4 h-4 text-emerald-400" />
+                    <h4 className="font-bold text-sm">Bot WhatsApp Belum Membalas Pesan?</h4>
+                  </div>
+                  <p className="text-xs text-slate-300">
+                    Buka menu Diagnostik & Live Log untuk melihat rincian error Meta seperti status token kadaluarsa, batas negara, atau URL webhook yang keliru.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWaViewMode('diagnostic')}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shrink-0 transition-colors"
+                >
+                  Buka Menu Diagnostik &rarr;
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

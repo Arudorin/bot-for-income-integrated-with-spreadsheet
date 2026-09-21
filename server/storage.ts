@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { SaleTransaction, BotSettings, SpreadsheetStats } from '../src/types.js';
+import { SaleTransaction, BotSettings, SpreadsheetStats, WebhookLogItem, UserAccount } from '../src/types.js';
 
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -8,6 +8,8 @@ const DB_FILE = path.join(DATA_DIR, 'db.json');
 interface DatabaseSchema {
   transactions: SaleTransaction[];
   settings: BotSettings;
+  webhookLogs?: WebhookLogItem[];
+  users?: UserAccount[];
 }
 
 const DEFAULT_SETTINGS: BotSettings = {
@@ -21,117 +23,10 @@ const DEFAULT_SETTINGS: BotSettings = {
   whatsappPhoneNumberId: '',
   googleAppsScriptUrl: '',
   googleSheetsAutoSync: false,
+  customWebhookDomain: 'https://toyisland-income.ai.studio',
 };
 
-const INITIAL_TRANSACTIONS: SaleTransaction[] = [
-  {
-    id: 'TRX-20260919-001',
-    timestamp: '2026-09-19T08:15:00.000Z',
-    date: '2026-09-19',
-    time: '08:15',
-    platform: 'whatsapp',
-    sender: '+6281288991122',
-    customerName: 'Kak Sarah',
-    rawMessage: 'Pagi kak, pesan Kopi Susu Aren 2 @18.000 sama Roti Bakar Coklat 1 15rb ya. Bayar via QRIS',
-    items: [
-      { id: 'item-1', name: 'Kopi Susu Aren', qty: 2, unitPrice: 18000, subtotal: 36000, category: 'Minuman' },
-      { id: 'item-2', name: 'Roti Bakar Coklat', qty: 1, unitPrice: 15000, subtotal: 15000, category: 'Makanan' },
-    ],
-    subtotal: 51000,
-    discount: 0,
-    tax: 0,
-    totalAmount: 51000,
-    paymentMethod: 'QRIS',
-    paymentStatus: 'Lunas',
-    notes: 'Meja 03 - Pesanan pagi',
-    syncedToGoogleSheets: true,
-  },
-  {
-    id: 'TRX-20260919-002',
-    timestamp: '2026-09-19T09:40:00.000Z',
-    date: '2026-09-19',
-    time: '09:40',
-    platform: 'telegram',
-    sender: '@rendy_pratama',
-    customerName: 'Mas Rendy',
-    rawMessage: 'Laku Kaos Polos Hitam Cotton 24s size L 3 pcs @65k. Transfer BCA atas nama Rendy',
-    items: [
-      { id: 'item-3', name: 'Kaos Polos Hitam Cotton 24s (L)', qty: 3, unitPrice: 65000, subtotal: 195000, category: 'Pakaian' },
-    ],
-    subtotal: 195000,
-    discount: 0,
-    tax: 0,
-    totalAmount: 195000,
-    paymentMethod: 'Transfer BCA',
-    paymentStatus: 'Lunas',
-    notes: 'Kirim via J&T Express',
-    syncedToGoogleSheets: true,
-  },
-  {
-    id: 'TRX-20260919-003',
-    timestamp: '2026-09-19T10:12:00.000Z',
-    date: '2026-09-19',
-    time: '10:12',
-    platform: 'whatsapp',
-    sender: '+6285711223344',
-    customerName: 'Ibu Dewi',
-    rawMessage: 'Catat ya min: Nasi Ayam Geprek Sambal Matah 4 porsi @25.000, Es Teh Manis 4 @4.000, bayar tunai pas',
-    items: [
-      { id: 'item-4', name: 'Nasi Ayam Geprek Sambal Matah', qty: 4, unitPrice: 25000, subtotal: 100000, category: 'Makanan' },
-      { id: 'item-5', name: 'Es Teh Manis', qty: 4, unitPrice: 4000, subtotal: 16000, category: 'Minuman' },
-    ],
-    subtotal: 116000,
-    discount: 0,
-    tax: 0,
-    totalAmount: 116000,
-    paymentMethod: 'Tunai',
-    paymentStatus: 'Lunas',
-    notes: 'Takeaway kantor lantai 3',
-    syncedToGoogleSheets: true,
-  },
-  {
-    id: 'TRX-20260918-004',
-    timestamp: '2026-09-18T14:20:00.000Z',
-    date: '2026-09-18',
-    time: '14:20',
-    platform: 'telegram',
-    sender: '@dewi_boutique',
-    customerName: 'Dewi',
-    rawMessage: 'Laku Gamis Silk Motif Flora 1 pcs 220.000 diskon 20rb, bayar Transfer Mandiri',
-    items: [
-      { id: 'item-6', name: 'Gamis Silk Motif Flora', qty: 1, unitPrice: 220000, subtotal: 220000, category: 'Fashion' },
-    ],
-    subtotal: 220000,
-    discount: 20000,
-    tax: 0,
-    totalAmount: 200000,
-    paymentMethod: 'Transfer Mandiri',
-    paymentStatus: 'Lunas',
-    notes: 'Promo flash sale akhir pekan',
-    syncedToGoogleSheets: true,
-  },
-  {
-    id: 'TRX-20260918-005',
-    timestamp: '2026-09-18T16:45:00.000Z',
-    date: '2026-09-18',
-    time: '16:45',
-    platform: 'whatsapp',
-    sender: '+6281900887766',
-    customerName: 'Pak Hendra',
-    rawMessage: 'Catat Mas: Paket Kopi Arabika Gayo 250gr 2 bks @75.000, bayar GoPay',
-    items: [
-      { id: 'item-7', name: 'Kopi Arabika Gayo 250gr', qty: 2, unitPrice: 75000, subtotal: 150000, category: 'Kopi' },
-    ],
-    subtotal: 150000,
-    discount: 0,
-    tax: 0,
-    totalAmount: 150000,
-    paymentMethod: 'GoPay',
-    paymentStatus: 'Lunas',
-    notes: 'Beans roasted medium-dark',
-    syncedToGoogleSheets: false,
-  },
-];
+const INITIAL_TRANSACTIONS: SaleTransaction[] = [];
 
 class Storage {
   private data: DatabaseSchema;
@@ -151,6 +46,8 @@ class Storage {
         return {
           transactions: Array.isArray(parsed.transactions) ? parsed.transactions : INITIAL_TRANSACTIONS,
           settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
+          webhookLogs: Array.isArray(parsed.webhookLogs) ? parsed.webhookLogs : [],
+          users: Array.isArray(parsed.users) ? parsed.users : [],
         };
       }
     } catch (err) {
@@ -159,6 +56,8 @@ class Storage {
     const initial: DatabaseSchema = {
       transactions: INITIAL_TRANSACTIONS,
       settings: DEFAULT_SETTINGS,
+      webhookLogs: [],
+      users: [],
     };
     this.saveData(initial);
     return initial;
@@ -201,6 +100,56 @@ class Storage {
       return true;
     }
     return false;
+  }
+
+  public deleteTransactions(ids: string[]): number {
+    const set = new Set(ids);
+    const initialLength = this.data.transactions.length;
+    this.data.transactions = this.data.transactions.filter((t) => !set.has(t.id));
+    if (this.data.transactions.length !== initialLength) {
+      this.saveData(this.data);
+    }
+    return initialLength - this.data.transactions.length;
+  }
+
+  public clearAllTransactions(): void {
+    this.data.transactions = [];
+    this.saveData(this.data);
+  }
+
+  public updateBatchStatus(ids: string[], paymentStatus: 'Lunas' | 'Belum Lunas'): number {
+    const set = new Set(ids);
+    let updatedCount = 0;
+    this.data.transactions = this.data.transactions.map((tx) => {
+      if (set.has(tx.id)) {
+        updatedCount++;
+        return { ...tx, paymentStatus };
+      }
+      return tx;
+    });
+    if (updatedCount > 0) {
+      this.saveData(this.data);
+    }
+    return updatedCount;
+  }
+
+  public importTransactions(newTxs: SaleTransaction[]): { added: number; updated: number } {
+    let added = 0;
+    let updated = 0;
+    for (const tx of newTxs) {
+      const existingIdx = this.data.transactions.findIndex((t) => t.id === tx.id);
+      if (existingIdx !== -1) {
+        this.data.transactions[existingIdx] = { ...this.data.transactions[existingIdx], ...tx };
+        updated++;
+      } else {
+        this.data.transactions.unshift(tx);
+        added++;
+      }
+    }
+    if (added > 0 || updated > 0) {
+      this.saveData(this.data);
+    }
+    return { added, updated };
   }
 
   public getSettings(): BotSettings {
@@ -266,6 +215,92 @@ class Storage {
     const d = String(now.getDate()).padStart(2, '0');
     const seq = String(this.data.transactions.length + 1).padStart(3, '0');
     return `TRX-${y}${m}${d}-${seq}`;
+  }
+
+  public getWebhookLogs(limit = 40): WebhookLogItem[] {
+    if (!Array.isArray(this.data.webhookLogs)) {
+      this.data.webhookLogs = [];
+    }
+    return this.data.webhookLogs.slice(0, limit);
+  }
+
+  public addWebhookLog(entry: Omit<WebhookLogItem, 'id' | 'timestamp'> & { id?: string; timestamp?: string }): WebhookLogItem {
+    if (!Array.isArray(this.data.webhookLogs)) {
+      this.data.webhookLogs = [];
+    }
+    const logItem: WebhookLogItem = {
+      id: entry.id || `LOG-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      timestamp: entry.timestamp || new Date().toISOString(),
+      source: entry.source,
+      type: entry.type,
+      status: entry.status,
+      title: entry.title,
+      summary: entry.summary,
+      sender: entry.sender,
+      details: entry.details,
+      troubleshootingHint: entry.troubleshootingHint,
+      errorCode: entry.errorCode,
+    };
+
+    this.data.webhookLogs.unshift(logItem);
+    // Keep max 100 logs
+    if (this.data.webhookLogs.length > 100) {
+      this.data.webhookLogs = this.data.webhookLogs.slice(0, 100);
+    }
+    this.saveData(this.data);
+    return logItem;
+  }
+
+  public clearWebhookLogs(): void {
+    this.data.webhookLogs = [];
+    this.saveData(this.data);
+  }
+
+  // --- User Authentication & Management ---
+  public getUsers(): UserAccount[] {
+    if (!Array.isArray(this.data.users)) {
+      this.data.users = [];
+    }
+    return this.data.users;
+  }
+
+  public getUserByUsername(username: string): UserAccount | undefined {
+    const clean = username.trim().toLowerCase();
+    return this.getUsers().find((u) => u.username.toLowerCase() === clean);
+  }
+
+  public getUserById(id: string): UserAccount | undefined {
+    return this.getUsers().find((u) => u.id === id);
+  }
+
+  public saveUser(user: UserAccount): UserAccount {
+    if (!Array.isArray(this.data.users)) {
+      this.data.users = [];
+    }
+    const idx = this.data.users.findIndex((u) => u.id === user.id || u.username.toLowerCase() === user.username.toLowerCase());
+    if (idx !== -1) {
+      this.data.users[idx] = { ...this.data.users[idx], ...user };
+    } else {
+      this.data.users.push(user);
+    }
+    this.saveData(this.data);
+    return user;
+  }
+
+  public setUsers(users: UserAccount[]): void {
+    this.data.users = users;
+    this.saveData(this.data);
+  }
+
+  public updateUser(id: string, updates: Partial<UserAccount>): UserAccount | null {
+    if (!Array.isArray(this.data.users)) {
+      this.data.users = [];
+    }
+    const idx = this.data.users.findIndex((u) => u.id === id);
+    if (idx === -1) return null;
+    this.data.users[idx] = { ...this.data.users[idx], ...updates };
+    this.saveData(this.data);
+    return this.data.users[idx];
   }
 }
 

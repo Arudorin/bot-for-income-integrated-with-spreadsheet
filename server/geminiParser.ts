@@ -6,13 +6,23 @@ let genAIClient: GoogleGenAI | null = null;
 function getAIClient(): GoogleGenAI {
   if (!genAIClient) {
     const apiKey = process.env.GEMINI_API_KEY || '';
-    genAIClient = new GoogleGenAI({ apiKey });
+    genAIClient = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
   }
   return genAIClient;
 }
 
-// Model cascade: prioritize gemini-3.8-flash, with fallbacks if temporary high-demand (503) occurs
-const CANDIDATE_MODELS = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
+// Model cascade: prioritize gemini-3.1-flash-lite (higher rate-limits & fast JSON extraction), with fallbacks to gemini-3.8-flash and gemini-flash-latest
+const CANDIDATE_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
+
+// Track rate-limited models in memory to avoid repeating quota-exhausted requests
+const modelCooldownUntil: Record<string, number> = {};
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -50,8 +60,14 @@ Aturan Ekstraksi:
   if (apiKey) {
     const ai = getAIClient();
 
-    // Iterate through candidate models with retry backoff
+    const now = Date.now();
+    // Iterate through candidate models with retry backoff & cooldown checking
     for (const modelName of CANDIDATE_MODELS) {
+      if (modelCooldownUntil[modelName] && now < modelCooldownUntil[modelName]) {
+        // Model is in cooldown due to quota limit, skip to next candidate
+        continue;
+      }
+
       let attempts = 0;
       const maxAttempts = 2;
 
@@ -149,21 +165,38 @@ Aturan Ekstraksi:
             reply_message: parsed.reply_message,
           };
         } catch (error: any) {
-          const isTransient =
-            error?.status === 503 ||
-            error?.message?.includes('503') ||
-            error?.message?.includes('high demand') ||
-            error?.message?.includes('UNAVAILABLE') ||
+          const errMsg = String(error?.message || error || '');
+          const isRateLimit =
             error?.status === 429 ||
-            error?.message?.includes('429');
+            errMsg.includes('429') ||
+            errMsg.includes('RESOURCE_EXHAUSTED') ||
+            errMsg.includes('Quota exceeded') ||
+            errMsg.includes('quota');
 
-          if (isTransient && attempts < maxAttempts) {
-            // Short backoff before retrying same or next model
-            await delay(400 * attempts);
+          if (isRateLimit) {
+            let cooldownSec = 60;
+            const retryMatch = errMsg.match(/retry in ([\d.]+)s/i);
+            if (retryMatch && retryMatch[1]) {
+              cooldownSec = Math.min(300, Math.ceil(parseFloat(retryMatch[1])) + 2);
+            }
+            modelCooldownUntil[modelName] = Date.now() + cooldownSec * 1000;
+            console.info(`[AI Parser] Model ${modelName} reached quota limit. Cooling down for ${cooldownSec}s. Switching to alternative...`);
+            // Break immediately to next model in cascade without redundant retries
+            break;
+          }
+
+          const isUnavailable =
+            error?.status === 503 ||
+            errMsg.includes('503') ||
+            errMsg.includes('high demand') ||
+            errMsg.includes('UNAVAILABLE');
+
+          if (isUnavailable && attempts < maxAttempts) {
+            await delay(300 * attempts);
             continue;
           }
-          // If error on current model, try next model in cascade
-          console.warn(`Gemini model ${modelName} encountered error (attempt ${attempts}):`, error?.message || error);
+
+          console.info(`[AI Parser] Model ${modelName} unavailable, checking next candidate model...`);
           break;
         }
       }

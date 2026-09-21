@@ -53,6 +53,7 @@ export interface BotSettings {
   whatsappPhoneNumberId: string;
   googleAppsScriptUrl: string;
   googleSheetsAutoSync: boolean;
+  customWebhookDomain?: string;
   lastWebhookPing?: string;
 }
 
@@ -84,4 +85,61 @@ export interface ParseSaleResponse {
   payment_status?: 'Lunas' | 'Belum Lunas';
   notes?: string;
   reply_message: string;
+}
+
+export interface WebhookLogItem {
+  id: string;
+  timestamp: string;
+  source: 'whatsapp' | 'telegram';
+  type: 'incoming_message' | 'message_status' | 'verification' | 'reply_sent' | 'reply_error' | 'general_error';
+  status: 'success' | 'warning' | 'error' | 'info';
+  title: string;
+  summary: string;
+  sender?: string;
+  details?: any;
+  troubleshootingHint?: string;
+  errorCode?: string | number;
+}
+
+export interface WhatsAppDiagnosticInfo {
+  configured: boolean;
+  valid?: boolean;
+  phoneNumber?: string;
+  verifiedName?: string;
+  error?: string;
+  errorDetails?: any;
+  errorAnalysis?: {
+    title: string;
+    explanation: string;
+    hint: string;
+  };
+  serverUrl: string;
+  verifyToken: string;
+  hasAccessToken: boolean;
+  hasPhoneId: boolean;
+  lastWebhookPing?: string;
+  recentLogs: WebhookLogItem[];
+}
+
+export type UserRole = 'admin' | 'cashier';
+
+export interface AuthUser {
+  id: string;
+  username: string;
+  name: string;
+  role: UserRole;
+  createdAt?: string;
+  lastLogin?: string;
+}
+
+export interface UserAccount extends AuthUser {
+  passwordHash: string;
+  salt: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  user?: AuthUser;
+  token?: string;
+  error?: string;
 }
