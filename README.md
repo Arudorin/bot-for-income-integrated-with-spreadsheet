@@ -1,148 +1,201 @@
-```markdown
-# Bot Pencatat Keuangan Terintegrasi Google Sheets
+<div align="center">
 
-Aplikasi pelacak pemasukan dan pengeluaran otomatis berbasis AI (Google Gemini) yang mampu membaca pesan masuk dari Telegram atau webhook, mencatat transaksi keuangan secara otomatis, serta menyinkronkannya langsung ke Google Sheets.
+# 💰 Expense & Income Tracker Bot
+
+**Solusi Otomatisasi Pencatatan Keuangan Berbasis AI & Terintegrasi Google Sheets**
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini%20AI-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Telegram](https://img.shields.io/badge/Telegram_Bot-229ED9?style=for-the-badge&logo=telegram&logoColor=white)](https://telegram.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
+<p align="center">
+  <a href="#-fitur-unggulan">Fitur Utama</a> •
+  <a href="#-arsitektur-sistem">Arsitektur</a> •
+  <a href="#-struktur-proyek">Struktur Proyek</a> •
+  <a href="#-panduan-instalasi">Cara Instalasi</a> •
+  <a href="#-integrasi-google-sheets">Google Sheets</a> •
+  <a href="#-cara-penggunaan">Penggunaan</a>
+</p>
 
 ---
 
-## Fitur Utama
+</div>
 
-- **Analisis AI Otomatis:** Menggunakan Google Gemini AI (`geminiParser.ts`) untuk mengekstrak tanggal, nominal, kategori, dan catatan dari pesan teks atau percakapan non-formal.
-- **Sinkronisasi Google Sheets:** Sinkronisasi dua arah secara real-time ke Google Sheets melalui integrasi Google Apps Script.
-- **Integrasi Bot Telegram:** Catat pengeluaran dan pemasukan kapan saja hanya dengan mengirimkan pesan teks biasa ke bot Telegram.
-- **Dashboard Interaktif:** 
-  - **Simulator Bot:** Uji coba analisis bahasa alami secara langsung dari antarmuka pengguna (UI).
-  - **Tampilan Spreadsheet:** Lihat seluruh data transaksi dalam bentuk tabel interaktif.
-  - **Kartu Statistik:** Ringkasan cepat untuk total pemasukan, pengeluaran, dan saldo saat ini.
-  - **Diagnostik WhatsApp & Webhook:** Alat diagnostik bawaan untuk menguji dan memecahkan masalah integrasi webhook serta alur pesan.
-- **Pencatatan Manual:** Fitur input data transaksi secara manual melalui tampilan modal.
+## 📌 Ringkasan
+
+**Expense & Income Tracker Bot** adalah aplikasi manajemen keuangan cerdas yang memungkinkan Anda mencatat transaksi harian (pemasukan & pengeluaran) hanya dengan **bahasa sehari-hari**. Powered by **Google Gemini AI**, sistem secara otomatis mengurai teks, menentukan kategori, nominal, serta tanggal secara rinci, lalu menyinkronkannya secara *real-time* ke **Google Sheets** dan Dashboard Web interaktif Anda.
 
 ---
 
-## Struktur Proyek
+## ✨ Fitur Unggulan
 
+| Fitur | Deskripsi |
+| :--- | :--- |
+| 🤖 **Natural Language Parsing** | Cukup ketik *"Makan siang bakso 25rb"* — Gemini AI akan mengekstrak nominal, tanggal, dan kategori secara otomatis. |
+| 📲 **Multi-Platform Input** | Mendukung pencatatan via **Bot Telegram**, **Web Simulator**, maupun **Modal Input Manual**. |
+| 📊 **Real-Time Sheets Sync** | Terintegrasi 2 arah dengan Google Sheets menggunakan Google Apps Script Webhook. |
+| 📈 **Interactive Dashboard** | Dilengkapi kartu statistik (Total Income, Total Expense, Net Balance) & tabel interaktif. |
+| 🛠️ **Diagnostic Suite** | Fitur bawaan untuk menguji endpoint Webhook, koneksi Telegram, dan respons Google Apps Script. |
+
+---
+
+## 🏗️ Arsitektur Sistem
 
 ```
-
-├── data/
-│   └── db.json                  # Penyimpanan cadangan lokal (JSON)
-├── server/
-│   ├── auth.ts                  # Penanganan autentikasi
-│   ├── diagnosticHelper.ts      # Diagnostik konektivitas dan webhook
-│   ├── geminiParser.ts          # Pemrosesan bahasa alami dengan Gemini AI
-│   ├── googleSheetsSync.ts      # Integrasi dengan Google Sheets API
-│   ├── storage.ts               # Lapisan penyimpanan data
-│   └── telegramBot.ts           # Penanganan dan pendengar API Bot Telegram
-├── src/
-│   ├── components/
-│   │   ├── BotSimulator.tsx     # Fitur pengujian percakapan di aplikasi
-│   │   ├── LoginPage.tsx        # Halaman autentikasi UI
-│   │   ├── ManualTransactionModal.tsx # Antarmuka input data manual
-│   │   ├── Navbar.tsx           # Navigasi atas
-│   │   ├── SpreadsheetView.tsx  # Tampilan tabel data di aplikasi
-│   │   ├── StatsCards.tsx       # Dashboard metrik keuangan
-│   │   ├── WebhookSetup.tsx     # UI konfigurasi Webhook
-│   │   └── WhatsAppDiagnostic.tsx # Antarmuka diagnostik pengiriman pesan
-│   ├── googleAppsScriptTemplate.ts # Templat skrip untuk penyebaran Google Apps Script
-│   ├── App.tsx                  # Komponen utama React
-│   ├── main.tsx                 # Titik masuk utama klien
-│   └── types.ts                 # Definisi tipe dan antarmuka TypeScript
-├── server.ts                    # Titik masuk server backend
-├── package.json                 # Dependensi dan skrip proyek
-└── vite.config.ts               # Konfigurasi build Vite
-
+ ┌────────────────┐     ┌────────────────┐     ┌────────────────┐
+ │  Telegram Bot  │     │ Web Simulator  │     │ Manual Form UI │
+ └───────┬────────┘     └───────┬────────┘     └───────┬────────┘
+         │                      │                      │
+         └──────────────────────┼──────────────────────┘
+                                ▼
+                   ┌─────────────────────────┐
+                   │  Backend Server (Node)  │
+                   └────────────┬────────────┘
+                                │
+               ┌────────────────┴────────────────┐
+               ▼                                 ▼
+   ┌───────────────────────┐         ┌───────────────────────┐
+   │ Google Gemini AI API  │         │ Local DB / JSON Store │
+   │ (Ekstraksi & Kategori)│         └───────────────────────┘
+   └───────────┬───────────┘
+               │
+               ▼
+   ┌───────────────────────┐
+   │  Google Apps Script   │ ──► [ 📊 Google Sheets ]
+   │   (Webhook Endpoint)  │
+   └───────────────────────┘
 ```
 
 ---
 
-## Prasyarat
+## 📁 Struktur Proyek
 
-- **Node.js:** Versi v18.0.0 atau lebih baru
+```
+bot-for-income-integrated-with-spreadsheet/
+├── 📂 data/
+│   └── db.json                    # Penyimpanan data lokal (JSON database)
+├── 📂 server/
+│   ├── auth.ts                    # Logika autentikasi
+│   ├── diagnosticHelper.ts        # Modul diagnostik koneksi & webhook
+│   ├── geminiParser.ts            # Parser AI berbasis Google Gemini
+│   ├── googleSheetsSync.ts        # Handler komunikasi Google Sheets
+│   ├── storage.ts                 # Lapisan persistensi data
+│   └── telegramBot.ts             # Listener & Handler Telegram Bot API
+├── 📂 src/
+│   ├── 📂 components/
+│   │   ├── BotSimulator.tsx       # Live Chat/Bot Simulator UI
+│   │   ├── LoginPage.tsx          # Halaman masuk sistem
+│   │   ├── ManualTransactionModal.tsx # Form input manual
+│   │   ├── Navbar.tsx             # Navigasi utama
+│   │   ├── SpreadsheetView.tsx    # Datagrid transaksi
+│   │   ├── StatsCards.tsx         # Ringkasan ringkas metrik keuangan
+│   │   ├── WebhookSetup.tsx       # Pengaturan integrasi Webhook
+│   │   └── WhatsAppDiagnostic.tsx # Diagnostic tool untuk integrasi pesan
+│   ├── googleAppsScriptTemplate.ts # Script template untuk Google Apps Script
+│   ├── App.tsx                    # Komponen utama React
+│   ├── main.tsx                   # Entry point frontend
+│   └── types.ts                   # Tipe data & Interfaces TypeScript
+├── server.ts                      # Entry point Express backend server
+├── package.json                   # Dependensi & skrip aplikasi
+└── vite.config.ts                 # Konfigurasi build Vite
+```
+
+---
+
+## 🚀 Panduan Instalasi
+
+### 1. Prasyarat
+Pastikan lingkungan pengembangan Anda sudah terpasang:
+- **Node.js** `>= v18.0.0`
 - **npm** atau **yarn**
-- **API Key Google Gemini:** Diperlukan untuk pemrosesan teks berbasis AI.
-- **Token Bot Telegram:** (Opsional) Diperlukan jika ingin menghubungkan aplikasi dengan Telegram via BotFather.
-- **Akun Google:** Diperlukan untuk memasang Google Apps Script dan mengakses spreadsheet sinkronisasi.
+- **Google Gemini API Key** ([Dapatkan di sini](https://aistudio.google.com/))
+- **Telegram Bot Token** (Melalui [@BotFather](https://t.me/BotFather))
 
----
-
-## Cara Penginstalan & Konfigurasi
-
-### 1. Cloning Repositori
+### 2. Clone Repositori
 ```bash
-git clone <url-repositori-anda>
+git clone https://github.com/arudorin/bot-for-income-integrated-with-spreadsheet.git
 cd bot-for-income-integrated-with-spreadsheet
-
 ```
 
-### 2. Instal Dependensi
-
+### 3. Instal Dependensi
 ```bash
 npm install
-
 ```
 
-### 3. Konfigurasi Environment Variables
-
-Salin berkas contoh konfigurasi `.env.example` menjadi `.env`:
-
+### 4. Konfigurasi Environment Variable
+Salin berkas `.env.example` menjadi `.env` dan sesuaikan nilainya:
 ```bash
 cp .env.example .env
-
 ```
 
-Isi variabel kredensial berikut di dalam berkas `.env`:
-
+Buka berkas `.env` lalu lengkapi kunci berikut:
 ```env
 PORT=5000
-GEMINI_API_KEY=masukkan_api_key_gemini_anda
-TELEGRAM_BOT_TOKEN=masukkan_token_bot_telegram_anda
-GOOGLE_SHEET_WEBHOOK_URL=masukkan_url_google_apps_script_anda
-
+GEMINI_API_KEY=AIzaSyYourGeminiApiKeyHere
+TELEGRAM_BOT_TOKEN=123456789:AAYourTelegramBotTokenHere
+GOOGLE_SHEET_WEBHOOK_URL=https://script.google.com/macros/s/YourAppsScriptDeploymentId/exec
 ```
-
-### 4. Konfigurasi Integrasi Google Sheets
-
-1. Buat atau buka berkas **Google Sheet** di akun Google Anda.
-2. Buka menu **Ekstensi** > **Apps Script**.
-3. Salin isi kode dari berkas `src/googleAppsScriptTemplate.ts` lalu tempelkan ke dalam editor Google Apps Script.
-4. Terapkan (Deploy) skrip sebagai **Aplikasi Web (Web App)**:
-* **Jalankan sebagai (Execute as):** *Saya (Me)*
-* **Siapa yang memiliki akses (Who has access):** *Siapa saja (Anyone)*
-
-
-5. Salin URL Aplikasi Web yang dihasilkan, lalu masukkan ke dalam variabel `GOOGLE_SHEET_WEBHOOK_URL` di berkas `.env` atau melalui menu **Pengaturan Webhook** di dashboard aplikasi.
 
 ---
 
-## Cara Menjalankan Aplikasi
+## 📊 Integrasi Google Sheets
 
-### Mode Pengembang (Development)
+1. Buat **Google Sheet** baru di akun Google Anda.
+2. Buka menu **Extensions** > **Apps Script**.
+3. Buka berkas `src/googleAppsScriptTemplate.ts` pada repositori ini, lalu salin seluruh kodenya ke editor Apps Script.
+4. Klik **Deploy** > **New Deployment**:
+   - **Select type:** *Web App*
+   - **Execute as:** *Me (Email Anda)*
+   - **Who has access:** *Anyone*
+5. Klik **Deploy**, lalu salin **Web App URL** yang dihasilkan ke variabel `GOOGLE_SHEET_WEBHOOK_URL` di berkas `.env` Anda.
 
-Jalankan server backend dan antarmuka frontend secara bersamaan:
+---
 
+## 🕹️ Cara Penggunaan
+
+### 🛠️ Mode Pengembang (Development)
+Jalankan frontend dan backend secara bersamaan:
 ```bash
 npm run dev
-
 ```
+Akses dashboard di browser melalui: `http://localhost:5000`
 
-### Mode Produksi (Production Build)
-
-Lakukan kompilasi aset frontend dan jalankan server:
-
+### 📦 Mode Produksi
+Kompilasi aplikasi dan jalankan server produksi:
 ```bash
 npm run build
 npm start
-
 ```
+
+### 💬 Contoh Perintah Chat (Telegram / Bot Simulator)
+
+- 🍔 **Pengeluaran:**
+  > *"Beli nasi goreng dan es teh 28000"*
+  
+  *(AI akan mencatat: Tipe = Pengeluaran, Kategori = Makanan & Minuman, Nominal = Rp 28.000)*
+
+- 💼 **Pemasukan:**
+  > *"Dapat pembayaran komisi project web 1.500.000"*
+  
+  *(AI akan mencatat: Tipe = Pemasukan, Kategori = Freelance/Pemasukan, Nominal = Rp 1.500.000)*
 
 ---
 
-## Cara Penggunaan
+## 🤝 Kontribusi
 
-1. **Melalui Telegram:** Kirimkan pesan biasa seperti *"Makan siang habis 25rb hari ini"* atau *"Dapat transferan freelance 1.500.000"* ke Bot Telegram Anda. AI akan mengkategorikan transaksi tersebut dan mencatatnya otomatis ke Google Sheets.
-2. **Melalui Simulator Web:** Buka dashboard aplikasi web, masuk ke menu **Bot Simulator**, lalu masukkan contoh pesan untuk melihat bagaimana Gemini AI mengurai data sebelum disimpan.
-3. **Pencatatan Manual:** Klik tombol **Tambah Transaksi** pada dashboard web untuk menentukan nominal, kategori, dan tanggal secara manual.
+Kontribusi selalu terbuka! Jika Anda memiliki gagasan fitur baru atau perbaikan *bug*:
+1. Fork repositori ini.
+2. Buat feature branch (`git checkout -b feature/FiturBaru`).
+3. Commit perubahan Anda (`git commit -m 'Menambahkan fitur baru'`).
+4. Push ke branch (`git push origin feature/FiturBaru`).
+5. Buat **Pull Request**.
 
-```
+---
 
-```
+## 📄 Lisensi
+
+Proyek ini dilisensikan di bawah lisensi [MIT](LICENSE).
